@@ -11,38 +11,56 @@
         
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #1a1a1a;
+            background-color: #0f172a; /* Slate 900 */
             touch-action: pan-x pan-y;
-            overflow: hidden; /* Prevent body scroll, handle in app container */
+            overflow: hidden; 
         }
 
         /* Specific Kerala Themes */
         .kerala-gradient {
             background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
         }
-        .calicut-sunset {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        }
-        .backwater-blue {
-            background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
-        }
-
+        
+        /* Glassmorphism that works on dark/light */
         .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
         }
 
-        .mobile-container {
-            max-width: 480px;
-            margin: 0 auto;
-            height: 100dvh; /* Dynamic viewport height */
+        /* Responsive Container - Mobile First, expands on Desktop */
+        .app-container {
+            width: 100%;
+            height: 100dvh;
             background: #f8fafc;
             position: relative;
-            box-shadow: 0 0 25px rgba(0,0,0,0.5);
             overflow: hidden;
             display: flex;
             flex-direction: column;
+        }
+
+        /* Desktop specific refinements */
+        @media (min-width: 768px) {
+            .app-container {
+                max-width: 1600px; /* Max width for huge screens */
+                margin: 0 auto;
+                box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            }
+            
+            /* Custom Scrollbar for desktop content areas */
+            .desktop-scroll::-webkit-scrollbar {
+                width: 8px;
+            }
+            .desktop-scroll::-webkit-scrollbar-track {
+                background: #f1f1f1; 
+            }
+            .desktop-scroll::-webkit-scrollbar-thumb {
+                background: #cbd5e1; 
+                border-radius: 4px;
+            }
+            .desktop-scroll::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8; 
+            }
         }
 
         /* Animations */
@@ -53,23 +71,14 @@
         }
         .animate-float { animation: float 3s ease-in-out infinite; }
 
-        @keyframes fall {
-            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
-        }
-        .coconut { position: absolute; font-size: 2rem; }
-
-        /* Scrollbar hiding */
+        /* Scrollbar hiding for mobile horizontal scrolls */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        /* Game Canvas */
-        #gameCanvas { background: #e0f2fe; touch-action: none; }
     </style>
 </head>
-<body class="bg-gray-900 flex justify-center items-center h-screen">
+<body class="flex justify-center items-center h-screen bg-gray-900 md:p-4">
 
-    <div class="mobile-container w-full" id="app">
+    <div class="app-container md:rounded-2xl transition-all duration-300" id="app">
         <!-- SPLASH SCREEN INITIALLY -->
         <div id="splash" class="absolute inset-0 z-50 kerala-gradient flex flex-col items-center justify-center text-white">
             <i class="fas fa-compass text-6xl mb-4 animate-float"></i>
@@ -86,10 +95,10 @@
         // --- DATA & STATE MANAGEMENT ---
         
         const LOCATIONS = [
-            { id: 1, name: "Calicut Beach", desc: "Find the broken bridge.", lat: 11.24, lng: 75.77 },
-            { id: 2, name: "Mananchira", desc: "The ancient water tank.", lat: 11.25, lng: 75.77 },
-            { id: 3, name: "SM Street", desc: "The street of sweets.", lat: 11.25, lng: 75.78 },
-            { id: 4, name: "Beypore", desc: "Where ships are born.", lat: 11.16, lng: 75.80 }
+            { id: 1, name: "Calicut Beach", desc: "Find the broken bridge.", lat: 11.24, lng: 75.77, img: "linear-gradient(to right, #4facfe 0%, #00f2fe 100%)" },
+            { id: 2, name: "Mananchira", desc: "The ancient water tank.", lat: 11.25, lng: 75.77, img: "linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)" },
+            { id: 3, name: "SM Street", desc: "The street of sweets.", lat: 11.25, lng: 75.78, img: "linear-gradient(to top, #fcc5e4 0%, #fda34b 15%, #ff7882 35%, #c8699e 52%, #7046aa 71%, #0c1db8 87%, #020f75 100%)" },
+            { id: 4, name: "Beypore", desc: "Where ships are born.", lat: 11.16, lng: 75.80, img: "linear-gradient(to top, #30cfd0 0%, #330867 100%)" }
         ];
 
         const QUESTS = [
@@ -124,25 +133,14 @@
             view: 'splash', // splash, login, admin, volunteer, player
             user: { role: null, name: 'Guest', points: 1250, badges: [BADGES[0]] },
             activeTab: 'home', // home, social, profile, leaderboard
-            game: {
-                active: false,
-                score: 0,
-                lives: 3,
-                interval: null
-            },
-            chat: {
-                open: false,
-                partner: null,
-                messages: []
-            },
+            game: { active: false, score: 0, lives: 3, interval: null },
+            chat: { open: false, partner: null, messages: [] },
             players: [
-                { id: 1, name: "Adnan", status: "public", dist: "10m", avatar: "🧔" },
-                { id: 2, name: "Riya", status: "public", dist: "45m", avatar: "👩‍🦱" },
-                { id: 3, name: "Kiran", status: "private", dist: "120m", avatar: "🧑" }
+                { id: 1, name: "Adnan", status: "public", dist: "10m", avatar: "🧔", lvl: 5 },
+                { id: 2, name: "Riya", status: "public", dist: "45m", avatar: "👩‍🦱", lvl: 3 },
+                { id: 3, name: "Kiran", status: "private", dist: "120m", avatar: "🧑", lvl: 8 }
             ]
         };
-
-        // --- CORE FUNCTIONS ---
 
         const app = document.getElementById('app');
 
@@ -150,13 +148,15 @@
             setTimeout(() => {
                 state.view = 'login';
                 render();
-            }, 2500);
+            }, 2000);
         }
 
         function render() {
             app.innerHTML = '';
             
-            // Render specific view based on state
+            // Check viewport for responsive adjustments if needed
+            // But mostly CSS handles it.
+            
             switch(state.view) {
                 case 'login': renderLogin(); break;
                 case 'admin': renderAdmin(); break;
@@ -164,7 +164,6 @@
                 case 'player': renderPlayer(); break;
             }
 
-            // Global Overlay Components
             if (state.game.active) renderMiniGame();
             if (state.chat.open) renderChatModal();
         }
@@ -173,106 +172,194 @@
 
         function renderLogin() {
             app.innerHTML = `
-                <div class="flex-1 flex flex-col justify-between p-8 bg-white relative overflow-hidden">
-                    <!-- Background Elements -->
-                    <div class="absolute top-0 right-0 w-64 h-64 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-70 -translate-y-1/2 translate-x-1/2"></div>
-                    <div class="absolute bottom-0 left-0 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-70 translate-y-1/2 -translate-x-1/2"></div>
-
-                    <div class="relative z-10 pt-12">
-                        <div class="w-20 h-20 bg-emerald-500 rounded-2xl flex items-center justify-center text-white text-4xl shadow-lg shadow-emerald-200 mb-6 mx-auto rotate-3">
-                            <i class="fas fa-map-location-dot"></i>
-                        </div>
-                        <h1 class="text-3xl font-bold text-gray-800 text-center">Welcome Back</h1>
-                        <p class="text-center text-gray-500 mt-2">Select your role to continue</p>
-                    </div>
+                <div class="w-full h-full flex flex-col md:flex-row bg-white relative overflow-hidden">
                     
-                    <div class="space-y-4 relative z-10 mb-8">
-                        <button onclick="login('player')" class="w-full p-4 bg-white border-2 border-emerald-100 rounded-2xl flex items-center gap-4 shadow-sm hover:border-emerald-500 hover:shadow-emerald-100 transition-all group">
-                            <div class="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                                <i class="fas fa-gamepad text-xl"></i>
-                            </div>
-                            <div class="text-left">
-                                <h3 class="font-bold text-gray-800">Player</h3>
-                                <p class="text-xs text-gray-400">Join the hunt & mingle</p>
-                            </div>
-                            <i class="fas fa-chevron-right ml-auto text-gray-300"></i>
-                        </button>
+                    <!-- Left Side (Visuals) - Hidden on mobile small, visible on Desktop -->
+                    <div class="hidden md:flex md:w-1/2 bg-emerald-600 relative items-center justify-center p-12 overflow-hidden">
+                        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                        <div class="absolute top-0 right-0 w-96 h-96 bg-emerald-400 rounded-full mix-blend-multiply filter blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2 animate-pulse"></div>
+                        <div class="absolute bottom-0 left-0 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50 translate-y-1/2 -translate-x-1/2 animate-pulse"></div>
+                        
+                        <div class="relative z-10 text-center text-white">
+                            <i class="fas fa-compass text-8xl mb-6 animate-float"></i>
+                            <h1 class="text-5xl font-bold mb-4">Kerala Quest</h1>
+                            <p class="text-emerald-100 text-lg max-w-md mx-auto">Explore Calicut's hidden gems, solve riddles, and meet fellow travelers in a safe, gamified environment.</p>
+                        </div>
+                    </div>
 
-                        <button onclick="login('volunteer')" class="w-full p-4 bg-white border-2 border-blue-100 rounded-2xl flex items-center gap-4 shadow-sm hover:border-blue-500 hover:shadow-blue-100 transition-all group">
-                            <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                                <i class="fas fa-id-badge text-xl"></i>
+                    <!-- Right Side (Login Form) -->
+                    <div class="flex-1 flex flex-col justify-center p-8 md:p-16 relative bg-gray-50">
+                        <div class="max-w-md mx-auto w-full">
+                            <div class="mb-10 text-center md:text-left">
+                                <div class="md:hidden w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg shadow-emerald-200 mb-4 mx-auto rotate-3">
+                                    <i class="fas fa-map-location-dot"></i>
+                                </div>
+                                <h2 class="text-3xl font-bold text-gray-800">Welcome Back</h2>
+                                <p class="text-gray-500 mt-2">Choose your role to start the adventure</p>
                             </div>
-                            <div class="text-left">
-                                <h3 class="font-bold text-gray-800">Volunteer</h3>
-                                <p class="text-xs text-gray-400">Manage zones & verify</p>
+                            
+                            <div class="space-y-4">
+                                ${loginButton('player', 'fa-gamepad', 'Player', 'Join the hunt & mingle', 'emerald')}
+                                ${loginButton('volunteer', 'fa-id-badge', 'Volunteer', 'Manage zones & verify', 'blue')}
+                                ${loginButton('admin', 'fa-server', 'Admin', 'Control center', 'gray')}
                             </div>
-                            <i class="fas fa-chevron-right ml-auto text-gray-300"></i>
-                        </button>
 
-                        <button onclick="login('admin')" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl flex items-center gap-4 shadow-sm hover:border-gray-800 transition-all group">
-                            <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 group-hover:bg-gray-800 group-hover:text-white transition-colors">
-                                <i class="fas fa-server text-xl"></i>
-                            </div>
-                            <div class="text-left">
-                                <h3 class="font-bold text-gray-800">Admin</h3>
-                                <p class="text-xs text-gray-400">Control center</p>
-                            </div>
-                            <i class="fas fa-chevron-right ml-auto text-gray-300"></i>
-                        </button>
+                            <p class="mt-8 text-center text-xs text-gray-400">By continuing, you agree to our Safety Guidelines for public play.</p>
+                        </div>
                     </div>
                 </div>
             `;
         }
 
-        // --- PLAYER VIEW ---
+        function loginButton(role, icon, title, sub, color) {
+            const colors = {
+                emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:border-emerald-500 hover:bg-emerald-500',
+                blue: 'bg-blue-50 text-blue-600 border-blue-100 hover:border-blue-500 hover:bg-blue-500',
+                gray: 'bg-gray-100 text-gray-600 border-gray-200 hover:border-gray-800 hover:bg-gray-800'
+            };
+            return `
+                <button onclick="login('${role}')" class="w-full p-5 bg-white border-2 rounded-2xl flex items-center gap-4 shadow-sm transition-all group ${colors[color].replace('bg-', 'hover:text-white ')}">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl transition-colors ${colors[color]} group-hover:text-white group-hover:bg-white/20">
+                        <i class="fas ${icon}"></i>
+                    </div>
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-gray-800 group-hover:text-white transition-colors">${title}</h3>
+                        <p class="text-xs text-gray-400 group-hover:text-gray-100 transition-colors">${sub}</p>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-300 group-hover:text-white"></i>
+                </button>
+            `;
+        }
+
+        // --- PLAYER VIEW (HYBRID LAYOUT) ---
         function renderPlayer() {
             let content = '';
-            
+            // Generate content based on active tab
             if (state.activeTab === 'home') content = renderPlayerHome();
             else if (state.activeTab === 'social') content = renderPlayerSocial();
             else if (state.activeTab === 'profile') content = renderPlayerProfile();
             else if (state.activeTab === 'leaderboard') content = renderPlayerLeaderboard();
 
             app.innerHTML = `
-                <!-- Top Nav -->
-                <div class="bg-white px-6 pt-12 pb-4 flex justify-between items-center shadow-sm sticky top-0 z-20">
-                    <div>
-                        <h2 class="font-bold text-lg text-gray-800">Hi, ${state.user.name} 👋</h2>
-                        <div class="flex items-center gap-1 text-xs text-gray-500">
-                            <i class="fas fa-map-marker-alt text-emerald-500"></i> Calicut Beach
+                <div class="flex w-full h-full bg-gray-50">
+                    
+                    <!-- DESKTOP SIDEBAR NAV (Hidden on Mobile) -->
+                    <div class="hidden md:flex w-64 bg-white border-r border-gray-100 flex-col shrink-0 z-20">
+                        <div class="p-6 flex items-center gap-3">
+                            <div class="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                                <i class="fas fa-compass"></i>
+                            </div>
+                            <span class="font-bold text-gray-800 tracking-tight">Kerala Quest</span>
+                        </div>
+
+                        <div class="px-4 py-2">
+                            <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">Menu</div>
+                            <nav class="space-y-1">
+                                ${desktopNavBtn('home', 'fa-compass', 'Quests')}
+                                ${desktopNavBtn('social', 'fa-users', 'Mingle')}
+                                ${desktopNavBtn('leaderboard', 'fa-trophy', 'Leaderboard')}
+                                ${desktopNavBtn('profile', 'fa-user', 'My Profile')}
+                            </nav>
+                        </div>
+
+                        <div class="mt-auto p-4">
+                            <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-4 text-white shadow-lg text-center">
+                                <div class="text-2xl font-bold">${state.user.points}</div>
+                                <div class="text-xs text-emerald-100 opacity-80 mb-3">Total Points</div>
+                                <button onclick="startGame()" class="w-full bg-white text-emerald-600 py-2 rounded-lg text-xs font-bold hover:bg-emerald-50 transition">Play Mini-Game</button>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 border-t border-gray-100">
+                            <button onclick="logout()" class="flex items-center gap-3 text-gray-500 hover:text-red-500 transition px-2 py-2 w-full rounded-lg hover:bg-red-50">
+                                <i class="fas fa-sign-out-alt"></i> <span class="text-sm font-medium">Logout</span>
+                            </button>
                         </div>
                     </div>
-                    <div class="flex gap-3">
-                        <div class="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1">
-                            <i class="fas fa-coins"></i> ${state.user.points}
+
+                    <!-- MAIN CONTENT AREA -->
+                    <div class="flex-1 flex flex-col h-full relative overflow-hidden">
+                        
+                        <!-- Mobile Top Header -->
+                        <div class="md:hidden bg-white px-6 pt-12 pb-4 flex justify-between items-center shadow-sm sticky top-0 z-20">
+                            <div>
+                                <h2 class="font-bold text-lg text-gray-800">Hi, ${state.user.name} 👋</h2>
+                                <div class="flex items-center gap-1 text-xs text-gray-500">
+                                    <i class="fas fa-map-marker-alt text-emerald-500"></i> Calicut Beach
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <div class="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1">
+                                    <i class="fas fa-coins"></i> ${state.user.points}
+                                </div>
+                            </div>
                         </div>
-                        <button onclick="logout()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
-                            <i class="fas fa-power-off text-xs"></i>
-                        </button>
-                    </div>
-                </div>
 
-                <!-- Scrollable Content -->
-                <div class="flex-1 overflow-y-auto no-scrollbar bg-gray-50 pb-24">
-                    ${content}
-                </div>
+                        <!-- Desktop Top Header -->
+                        <div class="hidden md:flex bg-white px-8 py-4 border-b border-gray-100 justify-between items-center">
+                            <h2 class="text-xl font-bold text-gray-800 capitalize">${state.activeTab}</h2>
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                                    <i class="fas fa-map-marker-alt text-emerald-500"></i>
+                                    <span>Calicut Beach Zone</span>
+                                </div>
+                                <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center border border-gray-300">😎</div>
+                            </div>
+                        </div>
 
-                <!-- Bottom Tab Bar -->
-                <div class="fixed bottom-0 w-full max-w-[480px] bg-white border-t border-gray-100 flex justify-between px-6 py-4 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-30">
-                    ${navBtn('home', 'fa-compass', 'Quest')}
-                    ${navBtn('social', 'fa-users', 'Mingle')}
-                    <div class="relative -top-8">
-                        <button onclick="startGame()" class="w-14 h-14 rounded-full kerala-gradient flex items-center justify-center text-white shadow-lg shadow-emerald-200 transform hover:scale-105 transition">
-                            <i class="fas fa-play text-xl ml-1"></i>
-                        </button>
+                        <!-- Scrollable View -->
+                        <div class="flex-1 overflow-y-auto desktop-scroll bg-gray-50/50 p-0 md:p-8 pb-24 md:pb-8">
+                            <div class="max-w-5xl mx-auto">
+                                ${content}
+                            </div>
+                        </div>
+
+                        <!-- Mobile Bottom Nav -->
+                        <div class="md:hidden fixed bottom-0 w-full bg-white border-t border-gray-100 flex justify-between px-6 py-4 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-30">
+                            ${mobileNavBtn('home', 'fa-compass', 'Quest')}
+                            ${mobileNavBtn('social', 'fa-users', 'Mingle')}
+                            <div class="relative -top-8">
+                                <button onclick="startGame()" class="w-14 h-14 rounded-full kerala-gradient flex items-center justify-center text-white shadow-lg shadow-emerald-200 transform hover:scale-105 transition">
+                                    <i class="fas fa-play text-xl ml-1"></i>
+                                </button>
+                            </div>
+                            ${mobileNavBtn('leaderboard', 'fa-trophy', 'Rank')}
+                            ${mobileNavBtn('profile', 'fa-user', 'Me')}
+                        </div>
+
                     </div>
-                    ${navBtn('leaderboard', 'fa-trophy', 'Rank')}
-                    ${navBtn('profile', 'fa-user', 'Me')}
+
+                    <!-- DESKTOP RIGHT SIDEBAR (Stats/Info) -->
+                    <div class="hidden lg:block w-80 bg-white border-l border-gray-100 p-6 overflow-y-auto">
+                        <h3 class="font-bold text-gray-800 mb-4">Nearby Players</h3>
+                        <div class="space-y-3 mb-8">
+                             ${state.players.slice(0, 3).map(p => `
+                                <div class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition cursor-pointer">
+                                    <div class="relative">
+                                        <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-xl">${p.avatar}</div>
+                                        <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-sm text-gray-800">${p.name}</div>
+                                        <div class="text-xs text-gray-400">Level ${p.lvl} • ${p.dist}</div>
+                                    </div>
+                                </div>
+                             `).join('')}
+                        </div>
+
+                        <h3 class="font-bold text-gray-800 mb-4">Live Events</h3>
+                        <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4">
+                            <div class="flex items-center gap-2 text-blue-700 font-bold text-sm mb-1">
+                                <i class="fas fa-cloud-sun"></i> Weather
+                            </div>
+                            <p class="text-xs text-blue-600">Sunny evening at Calicut Beach. Perfect for finding the Pier Clue.</p>
+                        </div>
+                    </div>
                 </div>
             `;
         }
 
-        function navBtn(id, icon, label) {
+        function mobileNavBtn(id, icon, label) {
             const active = state.activeTab === id;
             return `
                 <button onclick="switchTab('${id}')" class="flex flex-col items-center gap-1 w-12 ${active ? 'text-emerald-600' : 'text-gray-400'}">
@@ -282,62 +369,83 @@
             `;
         }
 
+        function desktopNavBtn(id, icon, label) {
+            const active = state.activeTab === id;
+            const baseClass = "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200";
+            const activeClass = "bg-emerald-50 text-emerald-600";
+            const inactiveClass = "text-gray-500 hover:bg-gray-50 hover:text-gray-800";
+            
+            return `
+                <button onclick="switchTab('${id}')" class="w-full ${baseClass} ${active ? activeClass : inactiveClass}">
+                    <i class="fas ${icon} w-5 text-center"></i>
+                    <span>${label}</span>
+                </button>
+            `;
+        }
+
         function renderPlayerHome() {
             const activeQuest = QUESTS[0];
             return `
-                <div class="p-6 space-y-6">
-                    <!-- Status Card -->
-                    <div class="w-full bg-blue-600 rounded-2xl p-6 text-white relative overflow-hidden shadow-xl shadow-blue-200">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-                        <div class="relative z-10">
-                            <div class="flex justify-between items-start mb-4">
-                                <span class="bg-white/20 text-xs px-2 py-1 rounded backdrop-blur">Daily Challenge</span>
-                                <span class="text-xs opacity-80"><i class="far fa-clock"></i> 2h left</span>
+                <div class="p-6 md:p-0 space-y-6">
+                    <!-- Grid Layout for Desktop -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        <!-- Hero Card -->
+                        <div class="lg:col-span-2 w-full bg-blue-600 rounded-3xl p-6 md:p-8 text-white relative overflow-hidden shadow-xl shadow-blue-200 group">
+                            <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full -translate-y-1/2 translate-x-1/2 transition-transform duration-700 group-hover:scale-110"></div>
+                            <div class="relative z-10">
+                                <div class="flex justify-between items-start mb-6">
+                                    <span class="bg-white/20 text-xs px-3 py-1 rounded-full backdrop-blur font-medium">Daily Challenge</span>
+                                    <span class="text-xs opacity-80 flex items-center gap-1"><i class="far fa-clock"></i> 2h left</span>
+                                </div>
+                                <h3 class="text-3xl font-bold mb-2">Catch The Coconut</h3>
+                                <p class="text-blue-100 text-sm md:text-base mb-6 max-w-md">The coconuts are falling! Catch 20 in a row without dropping any to unlock the hidden "Golden Halwa" badge.</p>
+                                <button onclick="startGame()" class="bg-white text-blue-600 px-6 py-3 rounded-xl text-sm font-bold shadow-lg hover:bg-blue-50 transition active:scale-95">Play Now</button>
                             </div>
-                            <h3 class="text-2xl font-bold mb-1">Catch The Coconut</h3>
-                            <p class="text-blue-100 text-sm mb-4">Catch 20 coconuts to unlock a hidden clue!</p>
-                            <button onclick="startGame()" class="bg-white text-blue-600 px-4 py-2 rounded-lg text-sm font-bold shadow-sm active:scale-95 transition">Play Now</button>
                         </div>
-                    </div>
 
-                    <!-- Active Quest -->
-                    <div>
-                        <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
-                            <i class="fas fa-scroll text-emerald-500"></i> Current Quest
-                        </h3>
-                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                            <div class="flex justify-between mb-2">
-                                <span class="font-bold text-gray-800 text-lg">${activeQuest.title}</span>
-                                <span class="text-emerald-600 font-bold text-sm">+${activeQuest.points} pts</span>
-                            </div>
-                            <p class="text-gray-500 text-sm italic mb-4">"${activeQuest.riddle}"</p>
+                        <!-- Active Quest Card -->
+                        <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
+                            <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600"><i class="fas fa-scroll"></i></div>
+                                Current Objective
+                            </h3>
                             
-                            <div class="relative">
-                                <input type="text" id="questInput" placeholder="Enter code found at location" 
+                            <div class="mb-4">
+                                <div class="flex justify-between mb-1">
+                                    <span class="font-bold text-gray-800 text-lg">${activeQuest.title}</span>
+                                    <span class="text-emerald-600 font-bold text-sm bg-emerald-50 px-2 py-1 rounded">+${activeQuest.points}</span>
+                                </div>
+                                <p class="text-gray-500 text-sm italic border-l-2 border-emerald-200 pl-3 py-1 my-3 bg-gray-50 rounded-r">"${activeQuest.riddle}"</p>
+                            </div>
+                            
+                            <div class="relative mt-auto">
+                                <input type="text" id="questInput" placeholder="Enter code..." 
                                     class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition">
-                                <button onclick="checkCode('${activeQuest.code}')" class="absolute right-2 top-2 bottom-2 bg-emerald-500 text-white px-3 rounded-lg text-sm font-bold shadow-sm">
+                                <button onclick="checkCode('${activeQuest.code}')" class="absolute right-2 top-2 bottom-2 bg-emerald-500 text-white px-4 rounded-lg text-xs font-bold shadow-sm hover:bg-emerald-600 transition">
                                     Check
                                 </button>
                             </div>
-                            <button onclick="alert('${activeQuest.hint}')" class="mt-3 text-xs text-gray-400 flex items-center gap-1 hover:text-gray-600">
+                            <button onclick="alert('${activeQuest.hint}')" class="mt-3 text-xs text-gray-400 flex items-center justify-center gap-1 hover:text-gray-600 transition">
                                 <i class="far fa-lightbulb"></i> Need a hint? (-50 pts)
                             </button>
                         </div>
                     </div>
 
-                    <!-- Nearby Spots -->
+                    <!-- Nearby Spots - Horizontal Scroll on Mobile, Grid on Desktop -->
                     <div>
-                        <h3 class="font-bold text-gray-800 mb-3">Nearby Zones</h3>
-                        <div class="flex gap-4 overflow-x-auto no-scrollbar pb-4">
+                        <h3 class="font-bold text-gray-800 mb-4 text-lg">Nearby Zones</h3>
+                        <div class="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto no-scrollbar pb-4 md:pb-0">
                             ${LOCATIONS.map(loc => `
-                                <div class="min-w-[140px] bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex-shrink-0">
-                                    <div class="w-full h-24 bg-gray-100 rounded-lg mb-2 relative overflow-hidden">
-                                        <!-- Placeholder Image Generation using CSS Pattern -->
-                                        <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-900 to-gray-100"></div>
-                                        <i class="fas fa-image absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-300"></i>
+                                <div class="min-w-[160px] md:min-w-0 bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex-shrink-0 hover:shadow-md transition-shadow cursor-pointer group">
+                                    <div class="w-full h-32 rounded-xl mb-3 relative overflow-hidden">
+                                        <div class="absolute inset-0 transition-transform duration-500 group-hover:scale-110" style="background: ${loc.img};"></div>
+                                        <div class="absolute bottom-2 left-2 bg-black/30 backdrop-blur px-2 py-1 rounded text-[10px] text-white font-medium flex items-center gap-1">
+                                            <i class="fas fa-map-marker-alt"></i> 1.2km
+                                        </div>
                                     </div>
-                                    <h4 class="font-bold text-sm text-gray-800 truncate">${loc.name}</h4>
-                                    <p class="text-[10px] text-gray-400 truncate">${loc.desc}</p>
+                                    <h4 class="font-bold text-sm text-gray-800 truncate px-1">${loc.name}</h4>
+                                    <p class="text-xs text-gray-400 truncate px-1 pb-1">${loc.desc}</p>
                                 </div>
                             `).join('')}
                         </div>
@@ -348,42 +456,51 @@
 
         function renderPlayerSocial() {
             return `
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="font-bold text-xl text-gray-800">Social Radar</h3>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-500">Visible</span>
-                            <div class="w-10 h-6 bg-emerald-500 rounded-full relative cursor-pointer">
+                <div class="p-6 md:p-0">
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800">Social Radar</h3>
+                            <p class="text-sm text-gray-500 mt-1">Connect with players in the same zone.</p>
+                        </div>
+                        <div class="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-xl border border-gray-200">
+                            <span class="text-sm font-medium text-gray-600">Visiblity</span>
+                            <div class="w-12 h-6 bg-emerald-500 rounded-full relative cursor-pointer shadow-inner">
                                 <div class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         ${state.players.map(p => `
-                            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md transition group">
                                 <div class="flex items-center gap-4">
                                     <div class="relative">
-                                        <span class="text-3xl">${p.avatar}</span>
-                                        <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                                        <div class="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center text-3xl group-hover:scale-110 transition">${p.avatar}</div>
+                                        <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
                                     </div>
                                     <div>
                                         <h4 class="font-bold text-gray-800">${p.name}</h4>
-                                        <p class="text-xs text-gray-400 flex items-center gap-1">
-                                            <i class="fas fa-map-pin text-[10px]"></i> ${p.dist} away
-                                        </p>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="px-2 py-0.5 bg-gray-100 rounded text-[10px] font-bold text-gray-500">LVL ${p.lvl}</span>
+                                            <span class="text-xs text-gray-400 flex items-center gap-1">
+                                                <i class="fas fa-map-pin text-[10px]"></i> ${p.dist}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                                <button onclick="openChat('${p.name}')" class="bg-blue-50 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center hover:bg-blue-100 transition">
+                                <button onclick="openChat('${p.name}')" class="bg-blue-50 text-blue-600 w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-600 hover:text-white transition shadow-sm">
                                     <i class="fas fa-comment-dots"></i>
                                 </button>
                             </div>
                         `).join('')}
                     </div>
 
-                    <div class="mt-8 bg-amber-50 border border-amber-100 p-4 rounded-xl">
-                        <h4 class="font-bold text-amber-800 text-sm mb-1"><i class="fas fa-shield-alt mr-1"></i> Safety First</h4>
-                        <p class="text-xs text-amber-700 leading-relaxed">Only mingle in public places like the Main Beach Promenade or Mananchira Square. Do not follow strangers to secluded areas.</p>
+                    <div class="mt-8 bg-amber-50 border border-amber-100 p-4 rounded-xl flex items-start gap-3">
+                        <i class="fas fa-shield-alt text-amber-500 mt-1"></i>
+                        <div>
+                            <h4 class="font-bold text-amber-800 text-sm">Safety Guidelines</h4>
+                            <p class="text-xs text-amber-700 leading-relaxed mt-1">Only mingle in public places like the Main Beach Promenade or Mananchira Square. Do not follow strangers to secluded areas.</p>
+                        </div>
                     </div>
                 </div>
             `;
@@ -391,33 +508,49 @@
 
         function renderPlayerProfile() {
             return `
-                <div class="p-6">
-                    <div class="text-center mb-8">
-                        <div class="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-3 flex items-center justify-center text-4xl border-4 border-white shadow-lg">😎</div>
-                        <h2 class="text-xl font-bold text-gray-800">${state.user.name}</h2>
-                        <p class="text-sm text-gray-500">Master Explorer</p>
+                <div class="p-6 md:p-0 max-w-2xl mx-auto">
+                    <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 text-center mb-8 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-emerald-400 to-teal-500 opacity-20"></div>
+                        
+                        <div class="relative z-10">
+                            <div class="w-28 h-28 bg-white rounded-full mx-auto mb-4 flex items-center justify-center text-5xl border-4 border-white shadow-xl relative">
+                                😎
+                                <div class="absolute bottom-1 right-1 w-6 h-6 bg-emerald-500 border-2 border-white rounded-full"></div>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-800">${state.user.name}</h2>
+                            <p class="text-sm text-gray-500 font-medium">Calicut Explorer • Joined May 2024</p>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 mb-8">
-                        <div class="bg-white p-4 rounded-xl shadow-sm text-center border border-gray-100">
-                            <div class="text-2xl font-bold text-emerald-500">${state.user.points}</div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm text-center border border-gray-100">
+                            <div class="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 mx-auto mb-2"><i class="fas fa-coins"></i></div>
+                            <div class="text-3xl font-bold text-gray-800">${state.user.points}</div>
                             <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Total Score</div>
                         </div>
-                        <div class="bg-white p-4 rounded-xl shadow-sm text-center border border-gray-100">
-                            <div class="text-2xl font-bold text-blue-500">12</div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm text-center border border-gray-100">
+                            <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mx-auto mb-2"><i class="fas fa-check-circle"></i></div>
+                            <div class="text-3xl font-bold text-gray-800">12</div>
                             <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Quests Done</div>
                         </div>
                     </div>
 
-                    <h3 class="font-bold text-gray-800 mb-4">Badges</h3>
-                    <div class="grid grid-cols-3 gap-3">
+                    <h3 class="font-bold text-gray-800 mb-4 px-2">Earned Badges</h3>
+                    <div class="grid grid-cols-3 md:grid-cols-4 gap-4">
                         ${BADGES.map(b => `
-                            <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
-                                <div class="text-2xl mb-1">${b.icon}</div>
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center hover:scale-105 transition duration-300">
+                                <div class="text-4xl mb-3 drop-shadow-sm">${b.icon}</div>
                                 <div class="font-bold text-xs text-gray-700">${b.name}</div>
-                                <div class="text-[8px] text-gray-400 mt-1">${b.desc}</div>
+                                <div class="text-[10px] text-gray-400 mt-1 leading-tight">${b.desc}</div>
                             </div>
                         `).join('')}
+                        
+                        <!-- Locked Badge Placeholder -->
+                        <div class="bg-gray-50 p-4 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center text-center opacity-60">
+                            <div class="text-4xl mb-3 grayscale">🥥</div>
+                            <div class="font-bold text-xs text-gray-500">Locked</div>
+                            <div class="text-[10px] text-gray-400 mt-1">Catch 50 Coconuts</div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -428,86 +561,175 @@
                 { name: "Sneha", score: 2400, avatar: "👩‍🚀" },
                 { name: "Arjun", score: 2150, avatar: "👨‍💻" },
                 { name: "You", score: 1250, avatar: "😎" },
-                { name: "Rahul", score: 900, avatar: "🏄" }
+                { name: "Rahul", score: 900, avatar: "🏄" },
+                { name: "Fathima", score: 850, avatar: "🧕" },
+                { name: "John", score: 620, avatar: "👲" }
             ];
 
             return `
-                <div class="p-6">
-                    <h3 class="font-bold text-xl text-gray-800 mb-6">Top Explorers</h3>
+                <div class="p-6 md:p-0 max-w-3xl mx-auto">
+                    <div class="flex items-center justify-between mb-8">
+                        <h3 class="font-bold text-2xl text-gray-800">Top Explorers</h3>
+                        <div class="flex bg-white rounded-lg p-1 border border-gray-200">
+                            <button class="px-3 py-1 bg-gray-100 rounded text-xs font-bold text-gray-700">Weekly</button>
+                            <button class="px-3 py-1 text-xs font-medium text-gray-500 hover:text-gray-800">All Time</button>
+                        </div>
+                    </div>
+                    
                     <div class="space-y-4">
-                        ${leaderboard.map((p, i) => `
-                            <div class="flex items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100 ${p.name === 'You' ? 'ring-2 ring-emerald-400' : ''}">
-                                <div class="w-8 font-bold text-gray-400 text-lg">#${i + 1}</div>
-                                <div class="text-2xl">${p.avatar}</div>
-                                <div class="flex-1">
-                                    <h4 class="font-bold text-gray-800">${p.name}</h4>
-                                    <p class="text-xs text-gray-400">Level ${Math.floor(p.score/500) + 1}</p>
+                        ${leaderboard.map((p, i) => {
+                            const isTop3 = i < 3;
+                            const medal = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : ''));
+                            const highlight = p.name === 'You' ? 'border-emerald-400 ring-4 ring-emerald-50 bg-emerald-50/30' : 'border-gray-100 bg-white';
+                            
+                            return `
+                            <div class="flex items-center gap-4 p-4 rounded-2xl shadow-sm border transition hover:shadow-md ${highlight}">
+                                <div class="w-8 font-bold text-gray-400 text-lg text-center flex items-center justify-center">
+                                    ${isTop3 ? `<span class="text-2xl">${medal}</span>` : `#${i + 1}`}
                                 </div>
-                                <div class="font-bold text-emerald-600">${p.score}</div>
+                                <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl border border-gray-100">${p.avatar}</div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-gray-800 flex items-center gap-2">
+                                        ${p.name}
+                                        ${p.name === 'You' ? '<span class="bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Me</span>' : ''}
+                                    </h4>
+                                    <p class="text-xs text-gray-400">Level ${Math.floor(p.score/500) + 1} Explorer</p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-bold text-emerald-600 text-lg">${p.score}</div>
+                                    <div class="text-[10px] text-gray-400 uppercase">Points</div>
+                                </div>
                             </div>
-                        `).join('')}
+                        `}).join('')}
                     </div>
                 </div>
             `;
         }
 
-        // --- ADMIN VIEW ---
+        // --- ADMIN VIEW (FULL DASHBOARD) ---
         function renderAdmin() {
             app.innerHTML = `
-                <div class="bg-gray-900 text-white p-6 sticky top-0 z-20">
-                    <div class="flex justify-between items-center mb-6">
-                        <div>
-                            <h2 class="text-xl font-bold">God Mode</h2>
-                            <p class="text-xs text-gray-400">Admin Control Panel</p>
+                <div class="flex flex-col h-full bg-gray-100">
+                    <!-- Desktop Header -->
+                    <div class="bg-gray-900 text-white p-4 md:px-8 md:py-5 sticky top-0 z-20 shadow-lg flex justify-between items-center">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center font-bold text-xl">K</div>
+                            <div>
+                                <h2 class="font-bold text-lg md:text-xl">Admin Console</h2>
+                                <p class="text-xs text-gray-400 hidden md:block">Real-time Game Monitoring System</p>
+                            </div>
                         </div>
-                        <button onclick="logout()" class="text-xs bg-gray-800 px-3 py-1 rounded hover:bg-gray-700">Logout</button>
-                    </div>
-                    
-                    <!-- Stats Row -->
-                    <div class="flex gap-4 mb-2">
-                        <div class="flex-1 bg-gray-800 rounded-lg p-3">
-                            <div class="text-xs text-gray-400">ONLINE</div>
-                            <div class="text-2xl font-bold text-green-400">142</div>
-                        </div>
-                        <div class="flex-1 bg-gray-800 rounded-lg p-3">
-                            <div class="text-xs text-gray-400">ZONES</div>
-                            <div class="text-2xl font-bold text-blue-400">4</div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-xs bg-green-900 text-green-400 px-3 py-1 rounded-full border border-green-700 animate-pulse">● System Online</span>
+                            <button onclick="logout()" class="text-sm bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition">Logout</button>
                         </div>
                     </div>
-                </div>
 
-                <div class="flex-1 bg-gray-100 p-6 overflow-y-auto">
-                    <!-- Live Map Mock -->
-                    <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
-                        <div class="p-3 border-b border-gray-100 flex justify-between items-center">
-                            <h3 class="font-bold text-sm text-gray-700">Live Heatmap</h3>
-                            <span class="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full animate-pulse">LIVE</span>
+                    <div class="flex-1 overflow-y-auto p-4 md:p-8">
+                        <!-- Stats Grid -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                                <div class="text-xs text-gray-500 font-bold uppercase mb-1">Active Players</div>
+                                <div class="text-3xl font-bold text-gray-800">142</div>
+                                <div class="text-xs text-green-500 mt-1">↑ 12% from yesterday</div>
+                            </div>
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                                <div class="text-xs text-gray-500 font-bold uppercase mb-1">Active Zones</div>
+                                <div class="text-3xl font-bold text-blue-600">4</div>
+                                <div class="text-xs text-gray-400 mt-1">Calicut Region</div>
+                            </div>
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                                <div class="text-xs text-gray-500 font-bold uppercase mb-1">Quests Completed</div>
+                                <div class="text-3xl font-bold text-emerald-600">890</div>
+                                <div class="text-xs text-gray-400 mt-1">Total database</div>
+                            </div>
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                                <div class="text-xs text-gray-500 font-bold uppercase mb-1">Safety Alerts</div>
+                                <div class="text-3xl font-bold text-red-500">2</div>
+                                <div class="text-xs text-red-500 mt-1">Requires Attention</div>
+                            </div>
                         </div>
-                        <div class="h-48 bg-gray-200 relative">
-                            <!-- Simulated Map -->
-                            <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#94a3b8 1px, transparent 1px); background-size: 10px 10px;"></div>
-                            <!-- Hotspots -->
-                            <div class="absolute top-1/4 left-1/4 w-12 h-12 bg-red-500 rounded-full blur-xl opacity-60"></div>
-                            <div class="absolute bottom-1/3 right-1/4 w-16 h-16 bg-red-500 rounded-full blur-xl opacity-40"></div>
+
+                        <!-- Main Dashboard Area -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             
-                            <div class="absolute bottom-2 left-2 text-[10px] text-gray-500 bg-white/80 px-2 rounded">Calicut Map View</div>
+                            <!-- Left: Map & Controls -->
+                            <div class="lg:col-span-2 space-y-6">
+                                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                                    <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                                        <h3 class="font-bold text-gray-700">Live Heatmap</h3>
+                                        <div class="flex gap-2">
+                                            <button class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded transition">Satellite</button>
+                                            <button class="text-xs bg-gray-800 text-white px-3 py-1 rounded transition">Map</button>
+                                        </div>
+                                    </div>
+                                    <div class="h-80 bg-gray-200 relative">
+                                        <!-- Simulated Map Grid -->
+                                        <div class="absolute inset-0 opacity-20" style="background-image: linear-gradient(#94a3b8 1px, transparent 1px), linear-gradient(90deg, #94a3b8 1px, transparent 1px); background-size: 20px 20px;"></div>
+                                        
+                                        <!-- Map Markers -->
+                                        <div class="absolute top-1/4 left-1/4 flex flex-col items-center group cursor-pointer">
+                                            <div class="w-12 h-12 bg-red-500/30 rounded-full animate-ping absolute"></div>
+                                            <div class="w-4 h-4 bg-red-500 rounded-full border-2 border-white relative z-10"></div>
+                                            <div class="bg-black/80 text-white text-[10px] px-2 py-1 rounded mt-1 opacity-0 group-hover:opacity-100 transition">High Traffic</div>
+                                        </div>
+                                        
+                                        <div class="absolute bottom-1/3 right-1/4 flex flex-col items-center">
+                                            <div class="w-4 h-4 bg-blue-500 rounded-full border-2 border-white relative z-10"></div>
+                                            <span class="text-[10px] font-bold text-gray-600 mt-1">Mananchira</span>
+                                        </div>
+
+                                        <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur px-3 py-2 rounded-lg text-xs shadow-sm">
+                                            <div class="font-bold mb-1">Zone Activity</div>
+                                            <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-red-500"></div> High</div>
+                                            <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-blue-500"></div> Moderate</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                                    <h3 class="font-bold text-gray-700 mb-4">Event Controls</h3>
+                                    <div class="flex flex-wrap gap-4">
+                                        <button onclick="alert('Starting Global Event!')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-4 rounded-xl font-bold shadow-lg shadow-emerald-100 transition flex items-center justify-center gap-2">
+                                            <i class="fas fa-play"></i> Start Hunt
+                                        </button>
+                                        <button onclick="alert('Broadcasting Message...')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-xl font-bold shadow-lg shadow-blue-100 transition flex items-center justify-center gap-2">
+                                            <i class="fas fa-bullhorn"></i> Broadcast
+                                        </button>
+                                        <button onclick="alert('Pausing...')" class="flex-1 bg-gray-800 hover:bg-gray-900 text-white px-6 py-4 rounded-xl font-bold shadow-lg shadow-gray-400 transition flex items-center justify-center gap-2">
+                                            <i class="fas fa-pause"></i> Pause All
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right: Logs & Alerts -->
+                            <div class="space-y-6">
+                                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full max-h-[600px]">
+                                    <div class="p-4 border-b border-gray-100 bg-gray-50">
+                                        <h3 class="font-bold text-gray-800">Live Activity Feed</h3>
+                                    </div>
+                                    <div class="p-0 overflow-y-auto flex-1 desktop-scroll">
+                                        ${[1,2,3,4,5,6].map(i => `
+                                            <div class="p-4 border-b border-gray-50 hover:bg-gray-50 transition">
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <span class="text-[10px] font-mono text-gray-400">10:${40+i}:00</span>
+                                                    <span class="text-[10px] font-bold bg-blue-50 text-blue-600 px-1.5 rounded">GAME</span>
+                                                </div>
+                                                <div class="text-sm text-gray-600">Player <span class="font-bold text-gray-800">#89${i}</span> solved "The Pier's Secret".</div>
+                                            </div>
+                                        `).join('')}
+                                        <div class="p-4 border-b border-gray-50 bg-red-50/50">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <span class="text-[10px] font-mono text-gray-400">10:39:55</span>
+                                                <span class="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 rounded">ALERT</span>
+                                            </div>
+                                            <div class="text-sm text-gray-800">Volunteer reported crowd congestion at Zone B.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-
-                    <!-- Actions -->
-                    <h3 class="font-bold text-gray-700 mb-3 text-sm">Event Controls</h3>
-                    <div class="grid grid-cols-2 gap-3 mb-6">
-                        <button onclick="alert('Starting Global Event!')" class="bg-emerald-600 text-white p-3 rounded-xl font-bold text-sm shadow-lg shadow-emerald-200 active:scale-95 transition">Start Hunt</button>
-                        <button onclick="alert('Pausing all active games...')" class="bg-gray-800 text-white p-3 rounded-xl font-bold text-sm shadow-lg shadow-gray-400 active:scale-95 transition">Pause All</button>
-                    </div>
-
-                    <!-- Logs -->
-                    <h3 class="font-bold text-gray-700 mb-3 text-sm">Live Logs</h3>
-                    <div class="bg-white rounded-xl p-4 text-xs space-y-2 font-mono text-gray-600 shadow-sm h-40 overflow-y-auto">
-                        <div class="flex gap-2"><span class="text-gray-400">10:42:01</span> <span>Player #892 found Pier Clue</span></div>
-                        <div class="flex gap-2"><span class="text-gray-400">10:41:55</span> <span class="text-red-500">Volunteer #2 reported safety alert</span></div>
-                        <div class="flex gap-2"><span class="text-gray-400">10:41:20</span> <span>New player registered</span></div>
-                        <div class="flex gap-2"><span class="text-gray-400">10:40:12</span> <span>Player #102 mingled with #44</span></div>
                     </div>
                 </div>
             `;
@@ -516,42 +738,53 @@
         // --- VOLUNTEER VIEW ---
         function renderVolunteer() {
             app.innerHTML = `
-                <div class="bg-blue-600 text-white p-6 pb-8 sticky top-0 z-20">
-                    <div class="flex justify-between items-center mb-1">
-                        <h2 class="font-bold text-lg">Volunteer Ops</h2>
-                        <button onclick="logout()" class="text-xs bg-blue-700 px-3 py-1 rounded">Exit</button>
-                    </div>
-                    <p class="text-blue-200 text-xs">Zone: South Beach</p>
-                </div>
-
-                <div class="flex-1 bg-gray-50 p-6 -mt-4 rounded-t-3xl z-30 relative overflow-y-auto">
-                    <!-- Scanner -->
-                    <div class="bg-white p-6 rounded-2xl shadow-lg mb-6 text-center transform -translate-y-8">
-                        <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-500 text-2xl animate-pulse">
-                            <i class="fas fa-camera"></i>
+                 <div class="flex flex-col h-full bg-gray-50">
+                    <div class="bg-blue-600 text-white p-6 sticky top-0 z-20 shadow-md">
+                        <div class="max-w-4xl mx-auto w-full flex justify-between items-center">
+                            <div>
+                                <h2 class="font-bold text-xl">Volunteer Ops</h2>
+                                <p class="text-blue-100 text-sm">Zone: South Beach • ID: #VOL-04</p>
+                            </div>
+                            <button onclick="logout()" class="text-sm bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg transition">Exit Mode</button>
                         </div>
-                        <h3 class="font-bold text-gray-800">Verify Discovery</h3>
-                        <p class="text-gray-400 text-xs mb-4">Scan player QR code to confirm treasure find.</p>
-                        <button onclick="alert('Camera opening...')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 transition">Open Scanner</button>
                     </div>
 
-                    <h3 class="font-bold text-gray-700 mb-3 text-sm">Tasks Queue</h3>
-                    <div class="space-y-3">
-                        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3">
-                            <div class="w-2 h-12 bg-orange-400 rounded-full"></div>
-                            <div class="flex-1">
-                                <h4 class="font-bold text-sm">Restock Water Station</h4>
-                                <p class="text-xs text-gray-400">Near Pier Entrance</p>
+                    <div class="flex-1 overflow-y-auto p-4 md:p-8">
+                        <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            <!-- Scanner Card -->
+                            <div class="bg-white p-8 rounded-3xl shadow-lg text-center flex flex-col items-center justify-center min-h-[300px]">
+                                <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 text-blue-500 text-4xl animate-pulse ring-8 ring-blue-50/50">
+                                    <i class="fas fa-qrcode"></i>
+                                </div>
+                                <h3 class="text-2xl font-bold text-gray-800 mb-2">Scan Player QR</h3>
+                                <p class="text-gray-500 mb-8 max-w-xs mx-auto">Use camera to verify treasure finds or check player status.</p>
+                                <button onclick="alert('Camera opening...')" class="w-full max-w-sm bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200 transition transform hover:scale-105">
+                                    <i class="fas fa-camera mr-2"></i> Launch Scanner
+                                </button>
                             </div>
-                            <input type="checkbox" class="w-5 h-5 accent-blue-600">
-                        </div>
-                        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3">
-                            <div class="w-2 h-12 bg-green-400 rounded-full"></div>
-                            <div class="flex-1">
-                                <h4 class="font-bold text-sm">Check-in Point B</h4>
-                                <p class="text-xs text-gray-400">Crowd control required</p>
+
+                            <!-- Tasks List -->
+                            <div class="space-y-4">
+                                <h3 class="font-bold text-gray-500 uppercase tracking-wider text-sm px-2">Assigned Tasks</h3>
+                                
+                                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-start gap-4">
+                                    <div class="mt-1"><input type="checkbox" class="w-6 h-6 accent-blue-600 cursor-pointer"></div>
+                                    <div>
+                                        <h4 class="font-bold text-gray-800">Restock Water Station</h4>
+                                        <p class="text-sm text-gray-500 mt-1">Location: Near Pier Entrance (Zone A)</p>
+                                        <span class="inline-block mt-2 text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded">High Priority</span>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-start gap-4 opacity-50">
+                                    <div class="mt-1"><input type="checkbox" checked class="w-6 h-6 accent-blue-600 cursor-pointer"></div>
+                                    <div>
+                                        <h4 class="font-bold text-gray-800 line-through">Morning Briefing</h4>
+                                        <p class="text-sm text-gray-500 mt-1">Completed at 08:00 AM</p>
+                                    </div>
+                                </div>
                             </div>
-                            <input type="checkbox" class="w-5 h-5 accent-blue-600">
                         </div>
                     </div>
                 </div>
@@ -564,25 +797,30 @@
         function renderMiniGame() {
             // Overlay for Coconut Catch Game
             const modal = document.createElement('div');
-            modal.className = "fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center";
+            modal.className = "fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4";
             modal.innerHTML = `
-                <div class="w-full max-w-md h-full max-h-[80vh] bg-sky-100 relative overflow-hidden rounded-xl mx-4">
+                <div class="w-full max-w-md h-full max-h-[600px] bg-sky-100 relative overflow-hidden rounded-3xl shadow-2xl ring-4 ring-white">
                     <div class="absolute top-4 left-4 right-4 flex justify-between font-bold text-sky-900 z-10">
-                        <span>Score: <span id="gameScore">0</span></span>
-                        <button onclick="endGame()" class="bg-red-500 text-white px-3 py-1 rounded text-xs">Exit</button>
+                        <span class="bg-white/50 px-3 py-1 rounded-full backdrop-blur">Score: <span id="gameScore">0</span></span>
+                        <button onclick="endGame()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-full text-xs transition">Exit</button>
                     </div>
                     
                     <!-- Game Area -->
-                    <div id="gameArea" class="absolute inset-0 mt-12">
+                    <div id="gameArea" class="absolute inset-0 mt-16 touch-none cursor-pointer">
+                        <!-- Cloud Decorations -->
+                        <i class="fas fa-cloud text-white absolute top-10 left-10 text-4xl opacity-80"></i>
+                        <i class="fas fa-cloud text-white absolute top-20 right-20 text-3xl opacity-60"></i>
+                        
                         <!-- Player Basket -->
-                        <div id="basket" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-4xl transition-all duration-75" style="left: 50%;">🧺</div>
+                        <div id="basket" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-5xl transition-all duration-75 select-none" style="left: 50%;">🧺</div>
                     </div>
 
                     <!-- Instructions -->
-                    <div id="gameStartOverlay" class="absolute inset-0 bg-black/50 flex items-center justify-center flex-col text-white z-20">
+                    <div id="gameStartOverlay" class="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center flex-col text-white z-20 text-center p-6">
+                        <div class="text-6xl mb-4">🥥</div>
                         <h2 class="text-3xl font-bold mb-2">Coconut Catch!</h2>
-                        <p class="text-sm mb-6">Tap Left / Right to move</p>
-                        <button onclick="initGameLogic()" class="bg-emerald-500 px-8 py-3 rounded-full font-bold animate-bounce">START</button>
+                        <p class="text-sm mb-8 opacity-90">Tap Left or Right to move the basket.<br>Don't let them drop!</p>
+                        <button onclick="initGameLogic()" class="bg-emerald-500 hover:bg-emerald-600 px-8 py-3 rounded-xl font-bold shadow-lg transform transition hover:scale-105">START GAME</button>
                     </div>
                 </div>
             `;
@@ -591,34 +829,38 @@
 
         function renderChatModal() {
             const chatBox = document.createElement('div');
-            chatBox.className = "fixed inset-x-0 bottom-0 top-20 bg-white z-50 rounded-t-3xl shadow-2xl flex flex-col animate-[float_0.3s_ease-out]";
+            // Desktop: Centered Modal, Mobile: Bottom Sheet
+            chatBox.className = "fixed inset-0 z-50 flex items-end md:items-center justify-center pointer-events-none";
+            
             chatBox.innerHTML = `
-                <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-3xl">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-xl">👤</div>
-                        <div>
-                            <h3 class="font-bold">${state.chat.partner}</h3>
-                            <p class="text-xs text-green-500">Online</p>
-                        </div>
-                    </div>
-                    <button onclick="closeChat()" class="w-8 h-8 bg-gray-200 rounded-full text-gray-500"><i class="fas fa-times"></i></button>
-                </div>
-                
-                <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3 bg-white">
-                    <div class="text-center text-xs text-gray-300 my-4">Chat started in public mode</div>
-                    ${state.chat.messages.map(m => `
-                        <div class="flex ${m.sender === 'me' ? 'justify-end' : 'justify-start'}">
-                            <div class="max-w-[80%] px-4 py-2 rounded-2xl text-sm ${m.sender === 'me' ? 'bg-emerald-500 text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none'}">
-                                ${m.text}
+                <div class="pointer-events-auto bg-white w-full md:w-[400px] h-[80vh] md:h-[600px] rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col animate-[float_0.3s_ease-out] overflow-hidden">
+                    <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-xl">👤</div>
+                            <div>
+                                <h3 class="font-bold text-gray-800">${state.chat.partner}</h3>
+                                <p class="text-xs text-green-500 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Online</p>
                             </div>
                         </div>
-                    `).join('')}
-                </div>
+                        <button onclick="closeChat()" class="w-8 h-8 hover:bg-gray-200 rounded-full text-gray-500 transition"><i class="fas fa-times"></i></button>
+                    </div>
+                    
+                    <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3 bg-white">
+                        <div class="text-center text-xs text-gray-300 my-4">Chat started in public mode</div>
+                        ${state.chat.messages.map(m => `
+                            <div class="flex ${m.sender === 'me' ? 'justify-end' : 'justify-start'}">
+                                <div class="max-w-[80%] px-4 py-2 rounded-2xl text-sm shadow-sm ${m.sender === 'me' ? 'bg-emerald-500 text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none'}">
+                                    ${m.text}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
 
-                <div class="p-4 border-t bg-gray-50">
-                    <div class="flex gap-2">
-                        <input type="text" id="chatInput" placeholder="Say hello..." class="flex-1 bg-white border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-emerald-500">
-                        <button onclick="sendMessage()" class="bg-emerald-500 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg"><i class="fas fa-paper-plane"></i></button>
+                    <div class="p-4 border-t bg-gray-50">
+                        <div class="flex gap-2">
+                            <input type="text" id="chatInput" placeholder="Say hello..." class="flex-1 bg-white border border-gray-200 rounded-full px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 shadow-sm">
+                            <button onclick="sendMessage()" class="bg-emerald-500 hover:bg-emerald-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition transform hover:rotate-12"><i class="fas fa-paper-plane"></i></button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -635,21 +877,24 @@
             let basketPos = 50;
             state.game.score = 0;
             
-            // Controls
-            gameArea.addEventListener('pointerdown', (e) => {
+            // Mouse/Touch logic
+            const moveBasket = (clientX) => {
                 const rect = gameArea.getBoundingClientRect();
-                const x = e.clientX - rect.left;
+                const x = clientX - rect.left;
+                // Simple logic: if click is on left half, move left, else move right
                 if(x < rect.width / 2) basketPos = Math.max(10, basketPos - 20);
                 else basketPos = Math.min(90, basketPos + 20);
                 basket.style.left = basketPos + '%';
-            });
+            }
+
+            gameArea.addEventListener('pointerdown', (e) => moveBasket(e.clientX));
 
             // Spawner
             state.game.interval = setInterval(() => {
                 const coco = document.createElement('div');
                 coco.innerText = '🥥';
-                coco.className = 'absolute text-2xl transition-top duration-[2000ms] linear';
-                coco.style.left = Math.random() * 90 + '%';
+                coco.className = 'absolute text-2xl transition-top duration-[2000ms] linear select-none';
+                coco.style.left = Math.random() * 80 + 10 + '%';
                 coco.style.top = '-30px';
                 gameArea.appendChild(coco);
 
@@ -660,9 +905,9 @@
                     coco.style.top = pos + 'px';
                     
                     // Collision
-                    if (pos > gameArea.offsetHeight - 60 && pos < gameArea.offsetHeight - 20) {
+                    if (pos > gameArea.offsetHeight - 80 && pos < gameArea.offsetHeight - 30) {
                         const cocoLeft = parseFloat(coco.style.left);
-                        if (Math.abs(cocoLeft - basketPos) < 15) {
+                        if (Math.abs(cocoLeft - basketPos) < 20) { // Hitbox
                             state.game.score += 10;
                             document.getElementById('gameScore').innerText = state.game.score;
                             coco.remove();
@@ -671,9 +916,9 @@
                             // Visual feedback
                             const pop = document.createElement('div');
                             pop.innerText = '+10';
-                            pop.className = 'absolute text-green-600 font-bold text-xl animate-bounce';
+                            pop.className = 'absolute text-green-600 font-bold text-xl animate-bounce select-none';
                             pop.style.left = basket.style.left;
-                            pop.style.bottom = '60px';
+                            pop.style.bottom = '80px';
                             gameArea.appendChild(pop);
                             setTimeout(() => pop.remove(), 500);
                         }
@@ -724,7 +969,7 @@
 
         function endGame() {
             state.game.active = false;
-            clearInterval(state.game.interval);
+            if(state.game.interval) clearInterval(state.game.interval);
             render();
         }
 
@@ -744,21 +989,41 @@
 
         function sendMessage() {
             const input = document.getElementById('chatInput');
-            if(input.value.trim()) {
+            if(input && input.value.trim()) {
                 state.chat.messages.push({ sender: 'me', text: input.value });
-                renderChatModal(); // Re-render chat only
                 
+                // Force redraw of chat content only if possible, or full render
+                // For simplicity in this vanilla JS prototype, we re-render the modal content if the element exists
+                const msgContainer = document.getElementById('chatMessages');
+                if(msgContainer) {
+                    msgContainer.innerHTML += `
+                        <div class="flex justify-end">
+                            <div class="max-w-[80%] px-4 py-2 rounded-2xl text-sm shadow-sm bg-emerald-500 text-white rounded-br-none">
+                                ${input.value}
+                            </div>
+                        </div>
+                    `;
+                    msgContainer.scrollTop = msgContainer.scrollHeight;
+                }
+                
+                const val = input.value;
+                input.value = '';
+
                 // Mock reply
                 setTimeout(() => {
                     state.chat.messages.push({ sender: 'them', text: 'Cool! See you there.' });
-                    // Only re-render if chat is still open
                     if(document.getElementById('chatMessages')) {
-                        const chatList = document.getElementById('chatMessages');
-                        chatList.innerHTML = ''; // quick hack to clear before redraw or better logic
-                        renderChatModal();
+                        const msgContainer = document.getElementById('chatMessages');
+                        msgContainer.innerHTML += `
+                            <div class="flex justify-start">
+                                <div class="max-w-[80%] px-4 py-2 rounded-2xl text-sm shadow-sm bg-gray-100 text-gray-800 rounded-bl-none">
+                                    Cool! See you there.
+                                </div>
+                            </div>
+                        `;
+                        msgContainer.scrollTop = msgContainer.scrollHeight;
                     }
                 }, 1500);
-                input.focus();
             }
         }
 
